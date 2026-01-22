@@ -67,18 +67,25 @@ def summarize_with_ai(news_items):
     """
 
     try:
-        client = OpenAI(api_key=AI_API_KEY, base_url=AI_BASE_URL)
+        # 使用 SiliconFlow 兼容的 client
+        client = OpenAI(
+            api_key=AI_API_KEY, 
+            base_url=AI_BASE_URL
+        )
         response = client.chat.completions.create(
             model=AI_MODEL,
             messages=[
-                {"role": "system", "content": "You are a helpful news assistant."},
+                {"role": "system", "content": "You are a helpful news assistant. Please respond in Chinese."},
                 {"role": "user", "content": prompt},
             ],
             stream=False
         )
         return response.choices[0].message.content
     except Exception as e:
-        print(f"❌ AI 总结失败: {e}")
+        print(f"❌ AI 总结失败 (Error): {e}")
+        # 如果是 Authentication Error，提示检查 Key
+        if "401" in str(e):
+            print("💡 提示: 请检查 GitHub Secrets 中的 AI_API_KEY 是否正确，且是否有额度。")
         return None
 
 def get_latest_news():
