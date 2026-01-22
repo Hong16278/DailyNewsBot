@@ -35,8 +35,8 @@ WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 AI_API_KEY = os.environ.get("AI_API_KEY")
 # 星火 API (v1api) 地址
 AI_BASE_URL = os.environ.get("AI_BASE_URL", "https://xh.v1api.cc/v1") 
-# 常用模型 (如果不指定，默认用 gpt-3.5-turbo，该平台通常支持)
-AI_MODEL = os.environ.get("AI_MODEL", "gpt-3.5-turbo") 
+# 换用 DeepSeek-V3 (dp)，它的中文总结能力和幽默感通常比 GPT-3.5 更好
+AI_MODEL = os.environ.get("AI_MODEL", "deepseek-v3") 
 
 def summarize_with_ai(news_items):
     """利用 AI 对新闻进行深度整合和点评"""
