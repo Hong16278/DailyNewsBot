@@ -33,8 +33,10 @@ RSS_FEEDS = [
 # 环境变量配置
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 AI_API_KEY = os.environ.get("AI_API_KEY")
-AI_BASE_URL = os.environ.get("AI_BASE_URL", "https://api.deepseek.com") # 默认使用 DeepSeek
-AI_MODEL = os.environ.get("AI_MODEL", "deepseek-chat")
+# 硅基流动 API 地址
+AI_BASE_URL = os.environ.get("AI_BASE_URL", "https://api.siliconflow.cn/v1") 
+# 硅基流动推荐的 DeepSeek 模型
+AI_MODEL = os.environ.get("AI_MODEL", "deepseek-ai/DeepSeek-V3") 
 
 def summarize_with_ai(news_items):
     """利用 AI 对新闻进行深度整合和点评"""
