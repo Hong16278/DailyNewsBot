@@ -2,23 +2,30 @@ import feedparser
 import os
 import requests
 import datetime
+from deep_translator import GoogleTranslator
+
+# 初始化翻译器
+translator = GoogleTranslator(source='auto', target='zh-CN')
 
 # 配置：RSS 源列表 (可以添加多个)
 RSS_FEEDS = [
     {
         "name": "Hacker News (Tech)",
         "url": "https://news.ycombinator.com/rss",
-        "max_items": 3
+        "max_items": 3,
+        "translate": True  # 标记需要翻译的源
     },
     {
         "name": "少数派 (效率/生活)",
         "url": "https://sspai.com/feed",
-        "max_items": 3
+        "max_items": 3,
+        "translate": False
     },
     {
         "name": "36氪 (科技/创投)",
         "url": "https://36kr.com/feed",
-        "max_items": 3
+        "max_items": 3,
+        "translate": False
     }
 ]
 
@@ -44,9 +51,18 @@ def get_latest_news():
             
             # 取前 N 条
             for entry in feed.entries[:feed_conf['max_items']]:
+                title = entry.title
+                # 如果需要翻译
+                if feed_conf.get('translate'):
+                    try:
+                        translated_title = translator.translate(title)
+                        title = f"{translated_title} ({title})" # 中文 (英文)
+                    except Exception as e:
+                        print(f"    ⚠️ 翻译失败: {e}")
+                
                 item = {
                     "source": feed_conf['name'],
-                    "title": entry.title,
+                    "title": title,
                     "link": entry.link,
                     "published": entry.get("published", "")[:16] # 截取部分时间字符串
                 }
