@@ -84,21 +84,25 @@ def send_notification(content):
         print("提示：如果你想发送到手机，请在 GitHub Secrets 中配置 WEBHOOK_URL")
         return
 
-    # 示例：发送到飞书/钉钉 (假设是 JSON 格式)
-    # 实际使用时请根据你的 Webhook 格式调整 payload
+    # 钉钉 (DingTalk) 机器人格式
+    # 注意：你需要设置钉钉机器人的安全关键词，建议设为 "新闻"
     payload = {
-        "msg_type": "text",
-        "content": {
-            "text": content
+        "msgtype": "text",
+        "text": {
+            "content": content
         }
     }
     
     try:
         response = requests.post(WEBHOOK_URL, json=payload)
         if response.status_code == 200:
-            print("✅ 消息推送成功！")
+            result = response.json()
+            if result.get('errcode') == 0:
+                print("✅ 消息推送成功！")
+            else:
+                print(f"❌ 推送失败: {result}")
         else:
-            print(f"❌ 消息推送失败: {response.status_code} - {response.text}")
+            print(f"❌ 网络请求失败: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"❌ 发送出错: {e}")
 
