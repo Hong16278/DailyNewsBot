@@ -29,4 +29,6 @@ jobs:
       env:
         # 这里引用 GitHub Secrets 中的 WEBHOOK_URL
         WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+        # 引用 AI Key
+        AI_API_KEY: ${{ secrets.AI_API_KEY }}
       run: python main.py
