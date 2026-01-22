@@ -70,7 +70,8 @@ def summarize_with_ai(news_items):
         # 使用 SiliconFlow 兼容的 client
         client = OpenAI(
             api_key=AI_API_KEY, 
-            base_url=AI_BASE_URL
+            base_url=AI_BASE_URL,
+            timeout=30.0 # 设置 30 秒超时，防止卡死
         )
         response = client.chat.completions.create(
             model=AI_MODEL,
