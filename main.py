@@ -86,20 +86,24 @@ def summarize_with_ai(news_items):
     # 为了让 AI 能看到更多内容，我们尝试提取 description (摘要)
     news_content = ""
     for idx, item in enumerate(news_items, 1):
-        summary = item.get('summary', '无摘要')[:100] # 缩减摘要长度，减轻 AI 负担
+        # 既然用户要求详实，我们把摘要长度限制放宽到 500 字，尽可能给 AI 提供更多素材
+        summary = item.get('summary', '无摘要')[:500] 
         news_content += f"{idx}. [{item['source']}] {item['title']}\n   摘要: {summary}\n   链接: {item['link']}\n\n"
 
     prompt = f"""
     你是我的私人新闻助理。今天是 {datetime.datetime.now().strftime('%Y-%m-%d')}。
-    请根据以下新闻列表写一份简报。
+    请根据以下新闻列表写一份**深度简报**。
     
     要求：
-    1. 分类整理（科技/财经/生活）。
-    2. **深度解读**：每条新闻不要只写一句话，要展开讲讲核心内容和影响（50-80字）。
-    3. 语言幽默犀利。
-    4. 选 5-8 条最有价值的新闻。
-    5. 附上 [链接]。
-    6. 一句话总结。
+    1. **客观陈述，拒绝废话**：不需要你扮演"科技博主"或"幽默大师"，请直接陈述事实。不要写"这很有趣"、"让我们拭目以待"之类的废话。
+    2. **内容详实 (重要)**：每条新闻必须写够 **200字** 以上。如果原文摘要不够长，请基于标题和有限信息进行合理背景补充，或者翻译摘要中的细节。
+    3. **包含评论**：如果新闻摘要中包含网友评论或观点，请务必保留；如果没有，请尝试分析该事件可能带来的争议点或行业影响。
+    4. **结构清晰**：
+       - **标题**：[来源] 原标题
+       - **核心事实**：详细描述发生了什么（100字+）。
+       - **背景/评论/影响**：补充背景信息或观点（100字+）。
+       - **链接**：[链接]
+    5. 分类整理（科技/财经/生活）。
 
     待处理新闻列表：
     {news_content}
@@ -110,12 +114,14 @@ def summarize_with_ai(news_items):
         client = OpenAI(
             api_key=AI_API_KEY, 
             base_url=AI_BASE_URL,
-            timeout=120.0 # 增加超时时间到 120 秒
+            timeout=300.0 # 既然要求写长文，超时时间直接拉到 5 分钟
         )
         response = client.chat.completions.create(
-            model=AI_MODEL,
+            # 换用 gpt-4o 或 deepseek-v3，这些模型生成长文能力更强
+            # 如果 AI_MODEL 环境变量没变，这里会沿用之前设置的 deepseek-v3
+            model=AI_MODEL, 
             messages=[
-                {"role": "system", "content": "You are a helpful news assistant. Please respond in Chinese."},
+                {"role": "system", "content": "You are a professional news analyst. Please respond in Chinese."},
                 {"role": "user", "content": prompt},
             ],
             stream=False
