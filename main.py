@@ -86,20 +86,19 @@ def summarize_with_ai(news_items):
     # 为了让 AI 能看到更多内容，我们尝试提取 description (摘要)
     news_content = ""
     for idx, item in enumerate(news_items, 1):
-        summary = item.get('summary', '无摘要')[:200] # 截取前200字防止太长
+        summary = item.get('summary', '无摘要')[:100] # 缩减摘要长度，减轻 AI 负担
         news_content += f"{idx}. [{item['source']}] {item['title']}\n   摘要: {summary}\n   链接: {item['link']}\n\n"
 
     prompt = f"""
     你是我的私人新闻助理。今天是 {datetime.datetime.now().strftime('%Y-%m-%d')}。
-    我平时比较忙，不想点开链接看原文。请你根据以下抓取到的新闻（包含标题和摘要），为我写一份**深度简报**。
+    请根据以下新闻列表写一份简报。
     
     要求：
-    1. **信息量要大**：不要只列标题，要根据提供的摘要内容，把新闻的核心讲清楚（发生了什么、有什么影响）。
-    2. **分类整理**：将新闻按领域（如科技、财经、生活）分类。
-    3. **语言风格**：幽默、犀利、像朋友聊天一样，不要太官方。
-    4. **重点解读**：挑选 5-8 条最有价值的新闻进行详细解读（每条 50-100 字）。
-    5. 虽然我不点链接，但为了来源可查，请在每条新闻最后附上 [链接] 字样（不需要完整 URL，保持整洁）。
-    6. 最后给出一个“今日一句话总结”。
+    1. 分类整理（科技/财经/生活）。
+    2. 语言幽默犀利。
+    3. 选 5 条重点解读。
+    4. 附上 [链接]。
+    5. 一句话总结。
 
     待处理新闻列表：
     {news_content}
@@ -110,7 +109,7 @@ def summarize_with_ai(news_items):
         client = OpenAI(
             api_key=AI_API_KEY, 
             base_url=AI_BASE_URL,
-            timeout=60.0 # 增加超时时间到 60 秒
+            timeout=120.0 # 增加超时时间到 120 秒
         )
         response = client.chat.completions.create(
             model=AI_MODEL,
