@@ -72,8 +72,8 @@ WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 AI_API_KEY = os.environ.get("AI_API_KEY")
 # 星火 API (v1api) 地址
 AI_BASE_URL = os.environ.get("AI_BASE_URL", "https://xh.v1api.cc/v1") 
-# 换用 DeepSeek-V3 (dp)，它的中文总结能力和幽默感通常比 GPT-3.5 更好
-AI_MODEL = os.environ.get("AI_MODEL", "deepseek-v3") 
+# 换用 DeepSeek-R1 (推理模型)，适合深度分析和长文本，不容易偷懒
+AI_MODEL = os.environ.get("AI_MODEL", "deepseek-ai/DeepSeek-R1") 
 
 def fetch_full_content(url):
     """抓取网页正文内容"""
