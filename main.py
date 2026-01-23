@@ -5,7 +5,7 @@ import datetime
 import sys
 from deep_translator import GoogleTranslator
 from openai import OpenAI
-from newspaper import sys
+from newspaper import Article
 # 添加 common 目录到路径 (已移除)
 # sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 # from common.notifier import send
