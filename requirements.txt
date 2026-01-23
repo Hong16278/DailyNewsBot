@@ -2,3 +2,5 @@ requests
 feedparser
 deep-translator
 openai
+newspaper3k
+lxml[html_clean]

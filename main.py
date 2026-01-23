@@ -4,6 +4,7 @@ import requests
 import datetime
 from deep_translator import GoogleTranslator
 from openai import OpenAI
+from newspaper import Article
 
 # 初始化翻译器
 translator = GoogleTranslator(source='auto', target='zh-CN')
@@ -74,6 +75,17 @@ AI_BASE_URL = os.environ.get("AI_BASE_URL", "https://xh.v1api.cc/v1")
 # 换用 DeepSeek-V3 (dp)，它的中文总结能力和幽默感通常比 GPT-3.5 更好
 AI_MODEL = os.environ.get("AI_MODEL", "deepseek-v3") 
 
+def fetch_full_content(url):
+    """抓取网页正文内容"""
+    try:
+        article = Article(url)
+        article.download()
+        article.parse()
+        return article.text
+    except Exception as e:
+        print(f"    ⚠️ 正文抓取失败: {e}")
+        return ""
+
 def summarize_with_ai(news_items):
     """利用 AI 对新闻进行深度整合和点评"""
     if not AI_API_KEY:
@@ -86,9 +98,14 @@ def summarize_with_ai(news_items):
     # 为了让 AI 能看到更多内容，我们尝试提取 description (摘要)
     news_content = ""
     for idx, item in enumerate(news_items, 1):
-        # 既然用户要求详实，我们把摘要长度限制放宽到 500 字，尽可能给 AI 提供更多素材
-        summary = item.get('summary', '无摘要')[:500] 
-        news_content += f"{idx}. [{item['source']}] {item['title']}\n   摘要: {summary}\n   链接: {item['link']}\n\n"
+        # 优先使用抓取到的正文，如果太短则使用摘要，截取前 1000 字
+        content_to_use = item.get('full_content', '')
+        if len(content_to_use) < 100:
+            content_to_use = item.get('summary', '无摘要')
+        
+        content_to_use = content_to_use[:1000] # 截取前 1000 字，避免 Token 爆炸
+        
+        news_content += f"{idx}. [{item['source']}] {item['title']}\n   内容: {content_to_use}\n   链接: {item['link']}\n\n"
 
     prompt = f"""
     你是我的私人新闻助理。今天是 {datetime.datetime.now().strftime('%Y-%m-%d')}。
@@ -96,8 +113,8 @@ def summarize_with_ai(news_items):
     
     要求：
     1. **客观陈述，拒绝废话**：不需要你扮演"科技博主"或"幽默大师"，请直接陈述事实。不要写"这很有趣"、"让我们拭目以待"之类的废话。
-    2. **内容详实 (重要)**：每条新闻必须写够 **200字** 以上。如果原文摘要不够长，请基于标题和有限信息进行合理背景补充，或者翻译摘要中的细节。
-    3. **包含评论**：如果新闻摘要中包含网友评论或观点，请务必保留；如果没有，请尝试分析该事件可能带来的争议点或行业影响。
+    2. **内容详实 (重要)**：每条新闻必须写够 **200字** 以上。基于提供的正文内容，详细还原事件经过、背景和各方观点。
+    3. **包含评论**：如果原文中包含网友评论或观点，请务必保留；如果没有，请尝试分析该事件可能带来的争议点或行业影响。
     4. **结构清晰**：
        - **标题**：[来源] 原标题
        - **核心事实**：详细描述发生了什么（100字+）。
@@ -164,11 +181,16 @@ def get_latest_news():
                     except:
                         pass
                 
+                # 尝试抓取正文
+                print(f"    正在抓取正文: {title[:20]}...")
+                full_content = fetch_full_content(entry.link)
+                
                 item = {
                     "source": feed_conf['name'],
                     "title": title,
                     "link": entry.link,
-                    "summary": summary  # 存入摘要
+                    "summary": summary,  # 存入摘要
+                    "full_content": full_content # 存入正文
                 }
                 all_news.append(item)
         except Exception as e:
