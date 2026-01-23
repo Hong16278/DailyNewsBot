@@ -135,7 +135,7 @@ def summarize_with_ai(news_items):
         client = OpenAI(
             api_key=AI_API_KEY, 
             base_url=AI_BASE_URL,
-            timeout=300.0 # 既然要求写长文，超时时间直接拉到 5 分钟
+            timeout=900.0 # 既然用 R1，超时时间直接拉到 15 分钟
         )
         response = client.chat.completions.create(
             # 换用 gpt-4o 或 deepseek-v3，这些模型生成长文能力更强
