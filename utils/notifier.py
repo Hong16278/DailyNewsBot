@@ -25,37 +25,45 @@ def send(title, content):
         print(f"[{title}] {content}")
         return
 
-    if "dingtalk://" in notifier_url:
+    # 智能识别钉钉：无论是 Apprise 格式还是原始 HTTPS Webhook
+    if "dingtalk://" in notifier_url or "oapi.dingtalk.com" in notifier_url:
         # 终极方案：手动 requests 发送
         try:
-            # 提取 token
-            token = notifier_url.split("dingtalk://")[1].split("/")[0].split("?")[0]
-            api_url = f"https://oapi.dingtalk.com/robot/send?access_token={token}"
+            token = ""
+            if "dingtalk://" in notifier_url:
+                # 提取 token (Apprise 格式)
+                token = notifier_url.split("dingtalk://")[1].split("/")[0].split("?")[0]
+            elif "access_token=" in notifier_url:
+                # 提取 token (HTTPS 格式)
+                token = notifier_url.split("access_token=")[1].split("&")[0]
             
-            headers = {'Content-Type': 'application/json'}
-            # 钉钉安全设置关键字拦截修复：
-            # 如果机器人设置了“自定义关键字”，内容中必须包含该关键字。
-            # 这里可以尝试把 title 也拼接到 text 里，或者在 title 前面加个通用前缀
-            # 假设关键字可能包含 "通知"、"监控"、"日报" 等
-            # 最稳妥的方式是将 title 拼接到 text 的第一行，因为 Markdown 的 title 字段仅在通知栏展示
-            
-            final_text = f"# {title}\n\n{content}"
-            
-            data = {
-                "msgtype": "markdown",
-                "markdown": {
-                    "title": title,
-                    "text": final_text
+            if token:
+                api_url = f"https://oapi.dingtalk.com/robot/send?access_token={token}"
+                
+                headers = {'Content-Type': 'application/json'}
+                # 钉钉安全设置关键字拦截修复：
+                # 如果机器人设置了“自定义关键字”，内容中必须包含该关键字。
+                # 这里可以尝试把 title 也拼接到 text 里，或者在 title 前面加个通用前缀
+                # 假设关键字可能包含 "通知"、"监控"、"日报" 等
+                # 最稳妥的方式是将 title 拼接到 text 的第一行，因为 Markdown 的 title 字段仅在通知栏展示
+                
+                final_text = f"# {title}\n\n{content}"
+                
+                data = {
+                    "msgtype": "markdown",
+                    "markdown": {
+                        "title": title,
+                        "text": final_text
+                    }
                 }
-            }
-            
-            import requests
-            response = requests.post(api_url, headers=headers, data=json.dumps(data))
-            if response.status_code == 200 and response.json().get('errcode') == 0:
-                print(f"✅ [原生请求] 钉钉 Markdown 推送成功: {title}")
-                return # 成功后直接返回，不再走 Apprise
-            else:
-                print(f"⚠️ [原生请求] 钉钉推送失败: {response.text}")
+                
+                import requests
+                response = requests.post(api_url, headers=headers, data=json.dumps(data))
+                if response.status_code == 200 and response.json().get('errcode') == 0:
+                    print(f"✅ [原生请求] 钉钉 Markdown 推送成功: {title}")
+                    return # 成功后直接返回，不再走 Apprise
+                else:
+                    print(f"⚠️ [原生请求] 钉钉推送失败: {response.text}")
         except Exception as e:
             print(f"⚠️ [原生请求] 异常: {e}")
             # 如果原生失败，继续尝试 Apprise
