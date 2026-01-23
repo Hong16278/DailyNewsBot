@@ -2,9 +2,14 @@ import feedparser
 import os
 import requests
 import datetime
+import sys
 from deep_translator import GoogleTranslator
 from openai import OpenAI
-from newspaper import Article
+from newspaper import sys
+# 添加 common 目录到路径 (已移除)
+# sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# from common.notifier import send
+from utils.notifier import send
 
 # 初始化翻译器
 translator = GoogleTranslator(source='auto', target='zh-CN')
@@ -214,19 +219,19 @@ def format_message_fallback(news_items):
         msg_lines.append(f"   🔗 {item['link']}\n")
     return "\n".join(msg_lines)
 
-def send_notification(content):
-    """发送通知"""
-    if not WEBHOOK_URL:
-        print("⚠️ 未配置 WEBHOOK_URL，打印到控制台：\n" + "-"*20 + f"\n{content}\n" + "-"*20)
-        return
-
-    # 钉钉格式
-    payload = {"msgtype": "text", "text": {"content": content}}
-    try:
-        requests.post(WEBHOOK_URL, json=payload)
-        print("✅ 消息已推送")
-    except Exception as e:
-        print(f"❌ 推送失败: {e}")
+# def send_notification(content):
+#     """发送通知"""
+#     if not WEBHOOK_URL:
+#         print("⚠️ 未配置 WEBHOOK_URL，打印到控制台：\n" + "-"*20 + f"\n{content}\n" + "-"*20)
+#         return
+#
+#     # 钉钉格式
+#     payload = {"msgtype": "text", "text": {"content": content}}
+#     try:
+#         requests.post(WEBHOOK_URL, json=payload)
+#         print("✅ 消息已推送")
+#     except Exception as e:
+#         print(f"❌ 推送失败: {e}")
 
 def main():
     print("🚀 自动推文发送器 (AI 增强版) 启动...")
@@ -243,7 +248,7 @@ def main():
     if not message:
         message = format_message_fallback(news)
         
-    send_notification(message)
+    send("每日新闻", message)
     print("🏁 任务完成。")
 
 if __name__ == "__main__":

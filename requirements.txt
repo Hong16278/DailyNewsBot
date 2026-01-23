@@ -1,6 +1,9 @@
-requests
 feedparser
-deep-translator
+requests
+beautifulsoup4
+deep_translator
 openai
 newspaper3k
 lxml[html_clean]
+python-dotenv
+apprise

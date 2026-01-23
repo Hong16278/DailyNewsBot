@@ -1,0 +1,89 @@
+import apprise
+from apprise import NotifyFormat
+import os
+import sys
+import json
+try:
+    from dotenv import load_dotenv
+    # 加载项目根目录下的 .env 文件
+    # utils/notifier.py -> utils -> project_root
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    load_dotenv(os.path.join(root_dir, '.env'))
+except ImportError:
+    pass
+
+def send(title, content):
+    """
+    统一消息推送函数
+    从环境变量 NOTIFIER_URL 读取配置
+    支持多个服务，用逗号分隔
+    """
+    notifier_url = os.environ.get("NOTIFIER_URL")
+    
+    if not notifier_url:
+        print("⚠️ 未配置 NOTIFIER_URL，仅打印日志。")
+        print(f"[{title}] {content}")
+        return
+
+    if "dingtalk://" in notifier_url:
+        # 终极方案：手动 requests 发送
+        try:
+            # 提取 token
+            token = notifier_url.split("dingtalk://")[1].split("/")[0].split("?")[0]
+            api_url = f"https://oapi.dingtalk.com/robot/send?access_token={token}"
+            
+            headers = {'Content-Type': 'application/json'}
+            # 钉钉安全设置关键字拦截修复：
+            # 如果机器人设置了“自定义关键字”，内容中必须包含该关键字。
+            # 这里可以尝试把 title 也拼接到 text 里，或者在 title 前面加个通用前缀
+            # 假设关键字可能包含 "通知"、"监控"、"日报" 等
+            # 最稳妥的方式是将 title 拼接到 text 的第一行，因为 Markdown 的 title 字段仅在通知栏展示
+            
+            final_text = f"# {title}\n\n{content}"
+            
+            data = {
+                "msgtype": "markdown",
+                "markdown": {
+                    "title": title,
+                    "text": final_text
+                }
+            }
+            
+            import requests
+            response = requests.post(api_url, headers=headers, data=json.dumps(data))
+            if response.status_code == 200 and response.json().get('errcode') == 0:
+                print(f"✅ [原生请求] 钉钉 Markdown 推送成功: {title}")
+                return # 成功后直接返回，不再走 Apprise
+            else:
+                print(f"⚠️ [原生请求] 钉钉推送失败: {response.text}")
+        except Exception as e:
+            print(f"⚠️ [原生请求] 异常: {e}")
+            # 如果原生失败，继续尝试 Apprise
+    
+    # 特殊处理：如果检测到是钉钉且 Apprise 无法发送 Markdown，回退到 requests 原生发送
+    # 这是最保险的方案
+    # if "dingtalk://" in notifier_url and "requests" not in sys.modules:
+    #     import requests
+    
+    # 支持多个 URL，用逗号或空格分隔
+    urls = notifier_url.split(',')
+    
+    # 临时补丁：如果 Apprise 真的不行，我们直接拦截钉钉请求
+    # 但为了保持架构统一，我们还是先试 Apprise
+    apobj = apprise.Apprise()
+    for url in urls:
+        if url.strip():
+            apobj.add(url.strip())
+    
+    try:
+        # Apprise 会自动处理不同服务的格式
+        # 终极方案：手动构造 Markdown 类型的 Apprise 调用
+        # DingTalk 插件如果配置了 ?msgtype=markdown 会优先使用
+        apobj.notify(
+            body=content,
+            title=title,
+            body_format=NotifyFormat.MARKDOWN
+        )
+        print(f"✅ 消息已通过 Apprise 推送: {title}")
+    except Exception as e:
+        print(f"❌ 推送失败: {e}")
