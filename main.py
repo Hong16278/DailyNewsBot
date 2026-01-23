@@ -110,7 +110,7 @@ def summarize_with_ai(news_items):
         client = OpenAI(
             api_key=AI_API_KEY, 
             base_url=AI_BASE_URL,
-            timeout=30.0 # 设置 30 秒超时，防止卡死
+            timeout=60.0 # 增加超时时间到 60 秒
         )
         response = client.chat.completions.create(
             model=AI_MODEL,
@@ -126,6 +126,9 @@ def summarize_with_ai(news_items):
         # 如果是 Authentication Error，提示检查 Key
         if "401" in str(e):
             print("💡 提示: 请检查 GitHub Secrets 中的 AI_API_KEY 是否正确，且是否有额度。")
+        # 如果是 404，提示检查模型名称
+        if "404" in str(e):
+             print(f"💡 提示: 模型 {AI_MODEL} 可能不存在，请尝试更换为 gpt-3.5-turbo 或其他模型。")
         return None
 
 def get_latest_news():
