@@ -13,19 +13,55 @@ RSS_FEEDS = [
     {
         "name": "Hacker News (Tech)",
         "url": "https://news.ycombinator.com/rss",
-        "max_items": 5, # AI 处理能力强，可以多获取一点
+        "max_items": 3,
         "translate": True
     },
     {
         "name": "少数派 (效率/生活)",
         "url": "https://sspai.com/feed",
-        "max_items": 5,
+        "max_items": 3,
         "translate": False
     },
     {
         "name": "36氪 (科技/创投)",
         "url": "https://36kr.com/feed",
-        "max_items": 5,
+        "max_items": 3,
+        "translate": False
+    },
+    {
+        "name": "V2EX (技术社区)",
+        "url": "https://www.v2ex.com/index.xml",
+        "max_items": 3,
+        "translate": False
+    },
+    {
+        "name": "IT之家 (数码)",
+        "url": "https://www.ithome.com/rss/",
+        "max_items": 3,
+        "translate": False
+    },
+    {
+        "name": "阮一峰日志 (技术思考)",
+        "url": "http://www.ruanyifeng.com/blog/atom.xml",
+        "max_items": 2,
+        "translate": False
+    },
+    {
+        "name": "财新网 (财经)",
+        "url": "http://corp.caixin.com/rss/",
+        "max_items": 3,
+        "translate": False
+    },
+    {
+        "name": "知乎精选",
+        "url": "https://www.zhihu.com/rss",
+        "max_items": 3,
+        "translate": False
+    },
+    {
+        "name": "豆瓣书评",
+        "url": "https://www.douban.com/feed/review/book",
+        "max_items": 2,
         "translate": False
     }
 ]
@@ -47,20 +83,23 @@ def summarize_with_ai(news_items):
     print("🤖 正在呼叫 AI 进行新闻整合 (这可能需要几十秒)...")
     
     # 构造给 AI 的提示词 (Prompt)
+    # 为了让 AI 能看到更多内容，我们尝试提取 description (摘要)
     news_content = ""
     for idx, item in enumerate(news_items, 1):
-        news_content += f"{idx}. [{item['source']}] {item['title']} ({item['link']})\n"
+        summary = item.get('summary', '无摘要')[:200] # 截取前200字防止太长
+        news_content += f"{idx}. [{item['source']}] {item['title']}\n   摘要: {summary}\n   链接: {item['link']}\n\n"
 
     prompt = f"""
     你是我的私人新闻助理。今天是 {datetime.datetime.now().strftime('%Y-%m-%d')}。
-    请根据以下抓取到的新闻列表，写一份**简报**。
+    我平时比较忙，不想点开链接看原文。请你根据以下抓取到的新闻（包含标题和摘要），为我写一份**深度简报**。
     
     要求：
-    1. **不要**简单罗列，请将相似话题聚合。
-    2. **用中文**回答，语言风格要**幽默、犀利**一点，像科技博主一样。
-    3. 挑选 3-5 个最重要的或最有趣的新闻进行**重点点评**。
-    4. 每一条重点新闻后，必须附上原文链接 (🔗 url)。
-    5. 最后给出一个“今日一句话总结”。
+    1. **信息量要大**：不要只列标题，要根据提供的摘要内容，把新闻的核心讲清楚（发生了什么、有什么影响）。
+    2. **分类整理**：将新闻按领域（如科技、财经、生活）分类。
+    3. **语言风格**：幽默、犀利、像朋友聊天一样，不要太官方。
+    4. **重点解读**：挑选 5-8 条最有价值的新闻进行详细解读（每条 50-100 字）。
+    5. 虽然我不点链接，但为了来源可查，请在每条新闻最后附上 [链接] 字样（不需要完整 URL，保持整洁）。
+    6. 最后给出一个“今日一句话总结”。
 
     待处理新闻列表：
     {news_content}
@@ -103,6 +142,11 @@ def get_latest_news():
             # 取前 N 条
             for entry in feed.entries[:feed_conf['max_items']]:
                 title = entry.title
+                # 尝试获取摘要 (description 或 summary)
+                summary = getattr(entry, 'summary', '') or getattr(entry, 'description', '')
+                # 清理 HTML 标签 (简单处理)
+                summary = summary.replace('<p>', '').replace('</p>', '').replace('<br>', '\n')
+
                 # 如果是英文源，先简单翻译一下标题方便 AI 理解（虽然 AI 懂英文，但翻译一下更稳）
                 if feed_conf.get('translate'):
                     try:
@@ -115,6 +159,7 @@ def get_latest_news():
                     "source": feed_conf['name'],
                     "title": title,
                     "link": entry.link,
+                    "summary": summary  # 存入摘要
                 }
                 all_news.append(item)
         except Exception as e:
