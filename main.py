@@ -12,6 +12,7 @@ from newspaper import Article
 from utils.notifier import send
 
 # 初始化翻译器
+# 确保 newspaper 库已正确安装
 translator = GoogleTranslator(source='auto', target='zh-CN')
 
 # 配置：RSS 源列表
