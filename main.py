@@ -93,81 +93,83 @@ def fetch_full_content(url):
         return "", ""
 
 def summarize_with_ai(news_items):
-    """利用 AI 对新闻进行深度整合和点评"""
+    """利用 AI 对新闻进行深度整合和点评 (分批处理以防偷懒)"""
     if not AI_API_KEY:
         print("⚠️ 未配置 AI_API_KEY，跳过 AI 总结，使用普通列表模式。")
         return None
 
-    print("🤖 正在呼叫 AI 进行新闻整合 (这可能需要几十秒)...")
+    print("🤖 正在呼叫 AI 进行新闻整合...")
     
-    # 构造给 AI 的提示词 (Prompt)
-    # 为了让 AI 能看到更多内容，我们尝试提取 description (摘要)
-    news_content = ""
-    for idx, item in enumerate(news_items, 1):
-        # 优先使用抓取到的正文，如果太短则使用摘要，截取前 1000 字
-        content_to_use = item.get('full_content', '')
-        if len(content_to_use) < 100:
-            content_to_use = item.get('summary', '无摘要')
-        
-        content_to_use = content_to_use[:1000] # 截取前 1000 字，避免 Token 爆炸
-        
-        news_content += f"{idx}. [{item['source']}] {item['title']}\n   内容: {content_to_use}\n   链接: {item['link']}\n\n"
-
-    prompt = f"""
-    你是我的私人新闻助理。今天是 {datetime.datetime.now().strftime('%Y-%m-%d')}。
-    请根据以下新闻列表写一份**深度简报**。
+    # === 分批策略 ===
+    # 为了防止 AI 偷懒或输出截断，我们将新闻按数量分批
+    # 每批处理 5 条新闻，这样 AI 的压力较小，输出质量更高
+    BATCH_SIZE = 5
+    batches = [news_items[i:i + BATCH_SIZE] for i in range(0, len(news_items), BATCH_SIZE)]
     
-    要求：
-    1. **客观陈述，拒绝废话**：不需要你扮演"科技博主"或"幽默大师"，请直接陈述事实。
-    2. **内容详实 (重要)**：每条新闻必须写够 **200字** 以上。基于提供的正文内容，详细还原事件经过、背景和各方观点。
-    3. **包含评论**：如果原文中包含网友评论或观点，请务必保留。
-    4. **全部输出，禁止省略**：
-       - **绝对不要**出现"（其他新闻因篇幅限制略）"、"（...）"这种话。
-       - 我提供给你的每一条新闻，你都要按照下面的格式写出来，哪怕内容很长也要写完。
-       - 如果内容太长，你可以分段写，但不要省略新闻条目。
-    5. **结构清晰**：
-       - **标题**：[来源] 原标题
-       - **核心事实**：详细描述发生了什么（100字+）。
-       - **背景/评论/影响**：补充背景信息或观点（100字+）。
-       - **链接**：[链接]
-    6. 分类整理（科技/财经/生活）。
+    full_summary = ""
+    
+    # 初始化客户端
+    client = OpenAI(
+        api_key=AI_API_KEY, 
+        base_url=AI_BASE_URL,
+        timeout=900.0 
+    )
 
-    待处理新闻列表：
-    {news_content}
-    """
+    for i, batch in enumerate(batches):
+        print(f"  ⚡ 正在处理第 {i+1}/{len(batches)} 批新闻 ({len(batch)}条)...")
+        
+        # 构造当前批次的内容
+        batch_content = ""
+        # 注意：这里的序号需要接续上一批
+        start_idx = i * BATCH_SIZE + 1
+        
+        for idx, item in enumerate(batch, start_idx):
+            content_to_use = item.get('full_content', '')
+            if len(content_to_use) < 100:
+                content_to_use = item.get('summary', '无摘要')
+            content_to_use = content_to_use[:1000] 
+            
+            batch_content += f"{idx}. [{item['source']}] {item['title']}\n   内容: {content_to_use}\n   链接: {item['link']}\n\n"
 
-    try:
-        # 使用 SiliconFlow 兼容的 client
-        # 星火 API 兼容 OpenAI 格式
-        client = OpenAI(
-            api_key=AI_API_KEY, 
-            base_url=AI_BASE_URL,
-            timeout=900.0 
-        )
-        response = client.chat.completions.create(
-            # 换用 gpt-4o 或 deepseek-v3，这些模型生成长文能力更强
-            # 如果 AI_MODEL 环境变量没变，这里会沿用之前设置的 deepseek-v3
-            model=AI_MODEL, 
-            messages=[
-                {"role": "system", "content": "You are a professional news analyst. Please respond in Chinese."},
-                {"role": "user", "content": prompt},
-            ],
-            # 星火 API 不支持 stream=False 时的部分参数，建议开启流式或者简化参数
-            stream=False 
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        print(f"❌ AI 总结失败 (Error): {e}")
-        # 如果是 Authentication Error，提示检查 Key
-        if "401" in str(e):
-            print("💡 提示: 请检查 GitHub Secrets 中的 AI_API_KEY 是否正确，且是否有额度。")
-        # 如果是 404，提示检查模型名称
-        if "404" in str(e):
-             print(f"💡 提示: 模型 {AI_MODEL} 可能不存在，请尝试更换为 gpt-3.5-turbo 或其他模型。")
-        # 如果是 400 (Bad Request)，可能是参数问题
-        if "400" in str(e):
-            print(f"💡 提示: 请求参数错误，请检查模型 {AI_MODEL} 是否支持该 API。")
-        return None
+        # 构造 Prompt
+        prompt = f"""
+        你是我的私人新闻助理。今天是 {datetime.datetime.now().strftime('%Y-%m-%d')}。
+        请根据以下新闻列表写一份**深度简报**。
+        
+        要求：
+        1. **客观陈述**：直接陈述事实，不要废话。
+        2. **内容详实**：每条新闻写 **150-200字**。详细还原事件经过、背景。
+        3. **包含评论**：如有网友评论或观点请保留。
+        4. **禁止省略**：必须把列表里的每一条都写出来！
+        5. **格式统一**：
+           - **标题**：{start_idx}. [来源] 原标题
+           - **核心事实**：...
+           - **背景/评论**：...
+           - **链接**：[链接]
+        
+        待处理新闻列表：
+        {batch_content}
+        """
+
+        try:
+            response = client.chat.completions.create(
+                model=AI_MODEL, 
+                messages=[
+                    {"role": "system", "content": "You are a professional news analyst. Please respond in Chinese."},
+                    {"role": "user", "content": prompt},
+                ],
+                stream=False 
+            )
+            batch_result = response.choices[0].message.content
+            full_summary += batch_result + "\n\n---\n\n" # 用分割线连接
+            
+        except Exception as e:
+            print(f"  ❌ 第 {i+1} 批总结失败: {e}")
+            # 如果这一批失败了，至少把原始标题拼进去，不至于完全丢失
+            for item in batch:
+                full_summary += f"⚠️ [AI处理失败] {item['title']}\n🔗 {item['link']}\n\n"
+
+    return full_summary
 
 def get_latest_news():
     """获取所有 RSS 源的最新新闻"""
