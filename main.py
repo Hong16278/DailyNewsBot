@@ -138,10 +138,11 @@ def summarize_with_ai(news_items):
 
     try:
         # 使用 SiliconFlow 兼容的 client
+        # 星火 API 兼容 OpenAI 格式
         client = OpenAI(
             api_key=AI_API_KEY, 
             base_url=AI_BASE_URL,
-            timeout=900.0 # 既然用 R1，超时时间直接拉到 15 分钟
+            timeout=900.0 
         )
         response = client.chat.completions.create(
             # 换用 gpt-4o 或 deepseek-v3，这些模型生成长文能力更强
@@ -151,7 +152,8 @@ def summarize_with_ai(news_items):
                 {"role": "system", "content": "You are a professional news analyst. Please respond in Chinese."},
                 {"role": "user", "content": prompt},
             ],
-            stream=False
+            # 星火 API 不支持 stream=False 时的部分参数，建议开启流式或者简化参数
+            stream=False 
         )
         return response.choices[0].message.content
     except Exception as e:
@@ -162,6 +164,9 @@ def summarize_with_ai(news_items):
         # 如果是 404，提示检查模型名称
         if "404" in str(e):
              print(f"💡 提示: 模型 {AI_MODEL} 可能不存在，请尝试更换为 gpt-3.5-turbo 或其他模型。")
+        # 如果是 400 (Bad Request)，可能是参数问题
+        if "400" in str(e):
+            print(f"💡 提示: 请求参数错误，请检查模型 {AI_MODEL} 是否支持该 API。")
         return None
 
 def get_latest_news():

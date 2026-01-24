@@ -5,10 +5,17 @@ import sys
 import json
 try:
     from dotenv import load_dotenv
-    # 加载项目根目录下的 .env 文件
-    # utils/notifier.py -> utils -> project_root
-    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    load_dotenv(os.path.join(root_dir, '.env'))
+    # 智能加载 .env
+    # 1. 确定路径
+    utils_dir = os.path.dirname(os.path.abspath(__file__))
+    sub_project_dir = os.path.dirname(utils_dir)       # e.g., DailyNewsBot
+    root_project_dir = os.path.dirname(sub_project_dir) # e.g., MyAutomationTools
+    
+    # 2. 依次尝试加载（load_dotenv 默认不覆盖已存在的变量，所以先加载的优先级高）
+    # 优先加载子项目目录下的 .env (如果有特定配置)
+    load_dotenv(os.path.join(sub_project_dir, '.env'))
+    # 其次加载根目录下的 .env (通用配置)
+    load_dotenv(os.path.join(root_project_dir, '.env'))
 except ImportError:
     pass
 
@@ -58,7 +65,7 @@ def send(title, content):
                 }
                 
                 import requests
-                response = requests.post(api_url, headers=headers, data=json.dumps(data))
+                response = requests.post(api_url, headers=headers, data=json.dumps(data), timeout=30)
                 if response.status_code == 200 and response.json().get('errcode') == 0:
                     print(f"✅ [原生请求] 钉钉 Markdown 推送成功: {title}")
                     return # 成功后直接返回，不再走 Apprise
