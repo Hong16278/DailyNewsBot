@@ -19,11 +19,13 @@ try:
 except ImportError:
     pass
 
-def send(title, content):
+def send(title, content, image_url=None, action_url=None):
     """
     统一消息推送函数
     从环境变量 NOTIFIER_URL 读取配置
     支持多个服务，用逗号分隔
+    :param image_url: (可选) 图片链接，用于 Markdown 插图或卡片封面
+    :param action_url: (可选) 跳转链接，用于 ActionCard 按钮
     """
     notifier_url = os.environ.get("NOTIFIER_URL")
     
@@ -48,26 +50,44 @@ def send(title, content):
                 api_url = f"https://oapi.dingtalk.com/robot/send?access_token={token}"
                 
                 headers = {'Content-Type': 'application/json'}
-                # 钉钉安全设置关键字拦截修复：
-                # 如果机器人设置了“自定义关键字”，内容中必须包含该关键字。
-                # 这里可以尝试把 title 也拼接到 text 里，或者在 title 前面加个通用前缀
-                # 假设关键字可能包含 "通知"、"监控"、"日报" 等
-                # 最稳妥的方式是将 title 拼接到 text 的第一行，因为 Markdown 的 title 字段仅在通知栏展示
                 
-                final_text = f"# {title}\n\n{content}"
+                # 构造消息内容
+                # 1. 处理图片：如果有图片，插在最前面
+                final_text = ""
+                if image_url:
+                    final_text += f"![cover]({image_url})\n\n"
                 
-                data = {
-                    "msgtype": "markdown",
-                    "markdown": {
-                        "title": title,
-                        "text": final_text
+                final_text += f"# {title}\n\n{content}"
+                
+                data = {}
+                
+                # 2. 决定消息类型：如果有 action_url，优先使用 ActionCard (更美观)
+                if action_url:
+                    data = {
+                        "msgtype": "actionCard",
+                        "actionCard": {
+                            "title": title, 
+                            "text": final_text,
+                            "btnOrientation": "0", 
+                            "singleTitle": "阅读全文", # 按钮文案
+                            "singleURL": action_url
+                        }
                     }
-                }
+                    print(f"✨ 正在发送 ActionCard: {title}")
+                else:
+                    # 回退到 Markdown
+                    data = {
+                        "msgtype": "markdown",
+                        "markdown": {
+                            "title": title,
+                            "text": final_text
+                        }
+                    }
                 
                 import requests
                 response = requests.post(api_url, headers=headers, data=json.dumps(data), timeout=30)
                 if response.status_code == 200 and response.json().get('errcode') == 0:
-                    print(f"✅ [原生请求] 钉钉 Markdown 推送成功: {title}")
+                    print(f"✅ [原生请求] 钉钉推送成功: {title}")
                     return # 成功后直接返回，不再走 Apprise
                 else:
                     print(f"⚠️ [原生请求] 钉钉推送失败: {response.text}")

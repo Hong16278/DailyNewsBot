@@ -76,10 +76,11 @@ RSS_FEEDS = [
 # 环境变量配置
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 AI_API_KEY = os.environ.get("AI_API_KEY")
-# 星火 API (v1api) 地址
+# 星火 API (v1api) 地址 - 保持原样，确保 Key 能用
 AI_BASE_URL = os.environ.get("AI_BASE_URL", "https://xh.v1api.cc/v1") 
-# 换用 DeepSeek-R1 (推理模型)，适合深度分析和长文本，不容易偷懒
-AI_MODEL = os.environ.get("AI_MODEL", "deepseek-ai/DeepSeek-R1") 
+# 换用 DeepSeek-V3.2 (用户指定，性价比高)
+# 如果中转商不支持 V3.2，可能会报错，届时可尝试改为 deepseek-ai/DeepSeek-V3
+AI_MODEL = os.environ.get("AI_MODEL", "deepseek-ai/DeepSeek-V3.2") 
 
 def fetch_full_content(url):
     """抓取网页正文内容"""
@@ -87,10 +88,10 @@ def fetch_full_content(url):
         article = Article(url)
         article.download()
         article.parse()
-        return article.text
+        return article.text, article.top_image
     except Exception as e:
         print(f"    ⚠️ 正文抓取失败: {e}")
-        return ""
+        return "", ""
 
 def summarize_with_ai(news_items):
     """利用 AI 对新闻进行深度整合和点评"""
@@ -198,14 +199,15 @@ def get_latest_news():
                 
                 # 尝试抓取正文
                 print(f"    正在抓取正文: {title[:20]}...")
-                full_content = fetch_full_content(entry.link)
+                full_content, top_image = fetch_full_content(entry.link)
                 
                 item = {
                     "source": feed_conf['name'],
                     "title": title,
                     "link": entry.link,
                     "summary": summary,  # 存入摘要
-                    "full_content": full_content # 存入正文
+                    "full_content": full_content, # 存入正文
+                    "image": top_image # 存入图片
                 }
                 all_news.append(item)
         except Exception as e:
@@ -254,7 +256,17 @@ def main():
     if not message:
         message = format_message_fallback(news)
         
-    send("每日新闻", message)
+    # 提取第一张有效图片作为封面
+    cover_image = None
+    main_link = None
+    if news:
+        main_link = news[0]['link']
+        for item in news:
+            if item.get('image') and item['image'].startswith('http'):
+                cover_image = item['image']
+                break
+
+    send("每日新闻", message, image_url=cover_image, action_url=main_link)
     print("🏁 任务完成。")
 
 if __name__ == "__main__":
