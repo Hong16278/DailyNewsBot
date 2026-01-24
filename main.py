@@ -78,9 +78,8 @@ WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 AI_API_KEY = os.environ.get("AI_API_KEY")
 # 星火 API (v1api) 地址 - 保持原样，确保 Key 能用
 AI_BASE_URL = os.environ.get("AI_BASE_URL", "https://xh.v1api.cc/v1") 
-# 换用 DeepSeek-V3.2 (用户指定，性价比高)
-# 如果中转商不支持 V3.2，可能会报错，届时可尝试改为 deepseek-ai/DeepSeek-V3
-AI_MODEL = os.environ.get("AI_MODEL", "deepseek-ai/DeepSeek-V3.2") 
+# 换用 DeepSeek-V3 (V3.2 可能中转商未支持，V3 是稳定版本且同样便宜)
+AI_MODEL = os.environ.get("AI_MODEL", "deepseek-ai/DeepSeek-V3") 
 
 def fetch_full_content(url):
     """抓取网页正文内容"""
