@@ -61,28 +61,38 @@ def send(title, content, image_url=None, action_url=None):
                 
                 data = {}
                 
-                # 2. 决定消息类型：如果有 action_url，优先使用 ActionCard (更美观)
+                # 2. 决定消息类型
+                # 修复手机端 ActionCard 链接点击失效问题：
+                # ActionCard 在手机端点击正文任何位置都会触发 singleURL，导致正文内链无法点击。
+                # 因此回退到 Markdown 模式，但手动优化排版以接近 ActionCard 的视觉效果。
+                
+                # if action_url:
+                #     data = {
+                #         "msgtype": "actionCard",
+                #         "actionCard": {
+                #             "title": title, 
+                #             "text": final_text,
+                #             "btnOrientation": "0", 
+                #             "singleTitle": "阅读全文", # 按钮文案
+                #             "singleURL": action_url
+                #         }
+                #     }
+                #     print(f"✨ 正在发送 ActionCard: {title}")
+                # else:
+                
+                # 统一使用 Markdown，既支持图片，也支持多链接独立点击
+                # 可以在底部手动加一个“阅读全文”的链接模拟按钮
                 if action_url:
-                    data = {
-                        "msgtype": "actionCard",
-                        "actionCard": {
-                            "title": title, 
-                            "text": final_text,
-                            "btnOrientation": "0", 
-                            "singleTitle": "阅读全文", # 按钮文案
-                            "singleURL": action_url
-                        }
+                    final_text += f"\n\n> [👉 阅读头条全文]({action_url})"
+
+                data = {
+                    "msgtype": "markdown",
+                    "markdown": {
+                        "title": title,
+                        "text": final_text
                     }
-                    print(f"✨ 正在发送 ActionCard: {title}")
-                else:
-                    # 回退到 Markdown
-                    data = {
-                        "msgtype": "markdown",
-                        "markdown": {
-                            "title": title,
-                            "text": final_text
-                        }
-                    }
+                }
+                print(f"✨ 正在发送优化版 Markdown: {title}")
                 
                 import requests
                 response = requests.post(api_url, headers=headers, data=json.dumps(data), timeout=30)
