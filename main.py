@@ -30,6 +30,12 @@ RSS_FEEDS = [
         "translate": False
     },
     {
+        "name": "机器之心 (AI前沿)",
+        "url": "https://www.jiqizhixin.com/rss",
+        "max_items": 3,
+        "translate": False
+    },
+    {
         "name": "36氪 (科技/创投)",
         "url": "https://36kr.com/feed",
         "max_items": 3,
@@ -42,16 +48,22 @@ RSS_FEEDS = [
         "translate": False
     },
     {
+        "name": "LinuxDo (技术/资源)",
+        "url": "https://linux.do/latest.rss",
+        "max_items": 3,
+        "translate": False
+    },
+    {
         "name": "IT之家 (数码)",
         "url": "https://www.ithome.com/rss/",
         "max_items": 3,
         "translate": False
     },
     {
-        "name": "阮一峰日志 (技术思考)",
-        "url": "http://www.ruanyifeng.com/blog/atom.xml",
+        "name": "James Clear (自我成长)",
+        "url": "https://jamesclear.com/feed",
         "max_items": 2,
-        "translate": False
+        "translate": True
     },
     {
         "name": "财新网 (财经)",
@@ -63,12 +75,6 @@ RSS_FEEDS = [
         "name": "知乎精选",
         "url": "https://www.zhihu.com/rss",
         "max_items": 3,
-        "translate": False
-    },
-    {
-        "name": "豆瓣书评",
-        "url": "https://www.douban.com/feed/review/book",
-        "max_items": 2,
         "translate": False
     }
 ]
