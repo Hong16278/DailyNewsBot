@@ -30,12 +30,6 @@ RSS_FEEDS = [
         "translate": False
     },
     {
-        "name": "机器之心 (AI前沿)",
-        "url": "https://www.jiqizhixin.com/rss",
-        "max_items": 3,
-        "translate": False
-    },
-    {
         "name": "36氪 (科技/创投)",
         "url": "https://36kr.com/feed",
         "max_items": 3,
@@ -48,22 +42,16 @@ RSS_FEEDS = [
         "translate": False
     },
     {
-        "name": "LinuxDo (技术/资源)",
-        "url": "https://linux.do/latest.rss",
-        "max_items": 3,
-        "translate": False
-    },
-    {
         "name": "IT之家 (数码)",
         "url": "https://www.ithome.com/rss/",
         "max_items": 3,
         "translate": False
     },
     {
-        "name": "James Clear (自我成长)",
-        "url": "https://jamesclear.com/feed",
+        "name": "阮一峰日志 (技术思考)",
+        "url": "http://www.ruanyifeng.com/blog/atom.xml",
         "max_items": 2,
-        "translate": True
+        "translate": False
     },
     {
         "name": "财新网 (财经)",
@@ -76,6 +64,12 @@ RSS_FEEDS = [
         "url": "https://www.zhihu.com/rss",
         "max_items": 3,
         "translate": False
+    },
+    {
+        "name": "豆瓣书评",
+        "url": "https://www.douban.com/feed/review/book",
+        "max_items": 2,
+        "translate": False
     }
 ]
 
@@ -83,9 +77,9 @@ RSS_FEEDS = [
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 AI_API_KEY = os.environ.get("AI_API_KEY")
 # 星火 API (v1api) 地址 - 保持原样，确保 Key 能用
-AI_BASE_URL = os.environ.get("AI_BASE_URL", "https://xh.v1api.cc/v1") 
-# 换用 DeepSeek-V3 (V3.2 可能中转商未支持，V3 是稳定版本且同样便宜)
-AI_MODEL = os.environ.get("AI_MODEL", "deepseek-ai/DeepSeek-V3")
+AI_BASE_URL = os.environ.get("AI_BASE_URL", "https://api.gemai.cc/v1") 
+# 用户指定模型
+AI_MODEL = os.environ.get("AI_MODEL", "[福利]gemini-3-flash-preview") 
 
 def fetch_full_content(url):
     """抓取网页正文内容"""

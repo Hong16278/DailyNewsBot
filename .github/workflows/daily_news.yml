@@ -2,8 +2,8 @@ name: Daily News Sender
 
 on:
   schedule:
-    # 每天 UTC 时间 0:00 (北京时间 8:00) 运行
-    - cron: '0 0 * * *'
+    # 每天 UTC 时间 0:15 (北京时间 8:15) 运行，错开整点高峰
+    - cron: '15 0 * * *'
   # 允许手动触发 (用于测试)
   workflow_dispatch:
 
@@ -27,8 +27,12 @@ jobs:
 
     - name: Run Daily News Bot
       env:
-        # 消息推送配置 (Apprise)
-        NOTIFIER_URL: ${{ secrets.NOTIFIER_URL }}
+        # 这里引用 GitHub Secrets 中的 WEBHOOK_URL
+        WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
         # 引用 AI Key
         AI_API_KEY: ${{ secrets.AI_API_KEY }}
+        # 引用 AI Base URL (如果 Secrets 未设置，代码中会有默认值，但建议设置)
+        AI_BASE_URL: ${{ secrets.AI_BASE_URL }}
+        # 引用 AI Model
+        AI_MODEL: ${{ secrets.AI_MODEL }}
       run: python main.py
