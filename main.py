@@ -43,6 +43,18 @@ RSS_FEEDS = [
         "translate": False
     },
     {
+        "name": "机器之心 (AI深度)",
+        "url": "https://www.jiqizhixin.com/rss",
+        "max_items": 2,
+        "translate": False
+    },
+    {
+        "name": "OpenAI Blog (官方动态)",
+        "url": "https://openai.com/blog/rss.xml",
+        "max_items": 1,
+        "translate": True
+    },
+    {
         "name": "V2EX (技术社区)",
         "url": "https://www.v2ex.com/index.xml",
         "max_items": 3,
@@ -61,6 +73,18 @@ RSS_FEEDS = [
         "translate": False
     },
     {
+        "name": "Farnam Street (思维模型)",
+        "url": "https://fs.blog/feed/",
+        "max_items": 1,
+        "translate": True
+    },
+    {
+        "name": "Paul Graham (创业/哲学)",
+        "url": "http://www.paulgraham.com/rss.html",
+        "max_items": 1,
+        "translate": True
+    },
+    {
         "name": "财新网 (财经)",
         "url": "http://corp.caixin.com/rss/",
         "max_items": 3,
@@ -70,12 +94,6 @@ RSS_FEEDS = [
         "name": "知乎精选",
         "url": "https://www.zhihu.com/rss",
         "max_items": 3,
-        "translate": False
-    },
-    {
-        "name": "豆瓣书评",
-        "url": "https://www.douban.com/feed/review/book",
-        "max_items": 2,
         "translate": False
     }
 ]
