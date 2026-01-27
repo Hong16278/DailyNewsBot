@@ -6,6 +6,13 @@ import sys
 from deep_translator import GoogleTranslator
 from openai import OpenAI
 from newspaper import Article
+try:
+    from dotenv import load_dotenv
+    # 加载当前目录下的 .env
+    load_dotenv()
+except ImportError:
+    pass
+
 # 添加 common 目录到路径 (已移除)
 # sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 # from common.notifier import send
@@ -77,9 +84,10 @@ RSS_FEEDS = [
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
 AI_API_KEY = os.environ.get("AI_API_KEY")
 # 星火 API (v1api) 地址 - 保持原样，确保 Key 能用
-AI_BASE_URL = os.environ.get("AI_BASE_URL", "https://api.gemai.cc/v1") 
+# 使用 or 确保如果环境变量为空字符串也能回退到默认值
+AI_BASE_URL = os.environ.get("AI_BASE_URL") or "https://api.gemai.cc/v1"
 # 用户指定模型
-AI_MODEL = os.environ.get("AI_MODEL", "[福利]gemini-3-flash-preview") 
+AI_MODEL = os.environ.get("AI_MODEL") or "[福利]gemini-3-flash-preview" 
 
 def fetch_full_content(url):
     """抓取网页正文内容"""
